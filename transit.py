@@ -18,7 +18,41 @@ DB_NAME = os.getenv("DB_NAME")
 
 # Lista de URLs de feeds RSS de carreteras
 rss_urls = {
-    'Transporte Metropolitano': 'https://gencat.cat/transit/opendata/001_RSS.xml',
+    'AP-7': 'https://gencat.cat/transit/opendata/001_RSS.xml',
+    'A-2': 'https://gencat.cat/transit/opendata/005_RSS.xml',
+    'AP-2': 'https://gencat.cat/transit/opendata/003_RSS.xml',
+    'A-7': 'https://gencat.cat/transit/opendata/024_RSS.xml',
+    'B-23': 'https://gencat.cat/transit/opendata/004_RSS.xml',
+    'B-20': 'https://gencat.cat/transit/opendata/035_RSS.xml',
+    'C-58': 'https://gencat.cat/transit/opendata/010_RSS.xml',
+    'C-25': 'http://www.gencat.cat/transit/opendata/015_RSS.xml',
+    'C-14': 'http://www.gencat.cat/transit/opendata/026_RSS.xml',
+    'C-35': 'http://www.gencat.cat/transit/opendata/026_RSS.xml',
+    'C-13': 'http://www.gencat.cat/transit/opendata/030_RSS.xml',
+    'C-16': 'http://www.gencat.cat/transit/opendata/011_RSS.xml',
+    'C-37': 'http://www.gencat.cat/transit/opendata/018_RSS.xml',
+    'C-65': 'http://www.gencat.cat/transit/opendata/020_RSS.xml',
+    'C-12': 'http://www.gencat.cat/transit/opendata/027_RSS.xml',
+    'C-66': 'http://www.gencat.cat/transit/opendata/022_RSS.xml',
+    'C-55': 'http://www.gencat.cat/transit/opendata/017_RSS.xml',
+    'C-33': 'http://www.gencat.cat/transit/opendata/022_RSS.xml',
+    'C-60': 'http://www.gencat.cat/transit/opendata/016_RSS.xml',
+    'C-31 Costa Brava': 'http://www.gencat.cat/transit/opendata/021_RSS.xml',
+    'C-32 Sud': 'http://www.gencat.cat/transit/opendata/007_RSS.xml',
+    'C-31 Nord': 'http://www.gencat.cat/transit/opendata/008_RSS.xml',
+    'C-32 Nord': 'http://www.gencat.cat/transit/opendata/009_RSS.xml',
+    'C-31 Sud': 'http://www.gencat.cat/transit/opendata/006_RSS.xml',
+    'C-17': 'http://www.gencat.cat/transit/opendata/013_RSS.xml',
+    'N-420': 'http://www.gencat.cat/transit/opendata/025_RSS.xml',
+    'N-145': 'http://www.gencat.cat/transit/opendata/032_RSS.xml',
+    'N-340': 'http://www.gencat.cat/transit/opendata/023_RSS.xml',
+    'N-230': 'http://www.gencat.cat/transit/opendata/028_RSS.xml',
+    'N-240': 'http://www.gencat.cat/transit/opendata/029_RSS.xml',
+    'N-152': 'http://www.gencat.cat/transit/opendata/033_RSS.xml',
+    'N-II': 'http://www.gencat.cat/transit/opendata/014_RSS.xml',
+    'N-260': 'http://www.gencat.cat/transit/opendata/031_RSS.xml'
+    
+    
     # Agrega aquí más URLs de feeds RSS de carreteras según tus necesidades
 }
 
