@@ -159,6 +159,22 @@ def registrar_incidencia_carretera(cursor, nombre_carretera, incidencia):
     fecha = incidencia['fecha_hora'].strftime('%Y-%m-%d')
     hora = incidencia['fecha_hora'].strftime('%H:%M:%S')
 
+    # Verificar si la incidencia ya existe en el mismo día con la misma descripción, ubicación y tipo
+    cursor.execute(
+        "SELECT * FROM incidencias_carretera WHERE carretera = %s AND descripcion = %s AND municipio = %s AND km = %s AND fecha = %s",
+        (incidencia['carretera'], incidencia['descripcion'], incidencia['municipio'], incidencia['km'], fecha)
+    )
+    if not cursor.fetchone():
+        try:  # <-- Inicio del bloque try
+            cursor.execute(
+                "INSERT INTO incidencias_carretera (carretera, municipio, direccion, km, causa, descripcion, fecha, hora) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (incidencia['carretera'], incidencia['municipio'], incidencia['direccion'], incidencia['km'], incidencia['causa'], incidencia['descripcion'], fecha, hora)
+            )
+        except pymysql.Error as e:  # <-- Manejo de excepciones
+            print(f"Error al insertar incidencia en MySQL: {e}")
+        else:
+            cnx.commit()  # <-- Confirmación de la transacción en caso de éxito
+
     # Verificar si la incidencia ya existe en el mismo día
     cursor.execute(
         "SELECT * FROM incidencias_carretera WHERE carretera = %s AND descripcion = %s AND fecha = %s",
@@ -178,11 +194,11 @@ def registrar_incidencia_carretera(cursor, nombre_carretera, incidencia):
 
 def cargar_ultimas_incidencias_carretera(cursor):
     try:
-        cursor.execute("SELECT descripcion, fecha FROM incidencias_carretera ORDER BY fecha DESC, hora DESC")  # Usamos 'descripcion' aquí
-        return [{'descripcion': row[0], 'fecha': row[1].strftime('%Y-%m-%d')} for row in cursor.fetchall()]
+        cursor.execute("SELECT carretera, descripcion, fecha FROM incidencias_carretera ORDER BY fecha DESC, hora DESC")  # Afegim 'carretera' a la consulta
+        return [{'carretera': row[0], 'descripcion': row[1], 'fecha': row[2].strftime('%Y-%m-%d')} for row in cursor.fetchall()]
     except pymysql.Error as e:
         print(f"Error al cargar últimas incidencias desde MySQL: {e}")
-        return []  # Devolver lista vacía en caso de error
+        return []
 
 
 def main():
@@ -200,25 +216,35 @@ def main():
 
         ultimas_incidencias = cargar_ultimas_incidencias_carretera(cursor)
         carreteras_con_incidencias = set()
+
         for nombre_carretera, url_carretera in rss_urls.items():
             incidencias = obtener_incidencias_carretera(url_carretera)
+            incidencias_nuevas = []
+
             for incidencia in incidencias:
                 incidencia_notificada = False
                 for ultima_incidencia in ultimas_incidencias:
-                    if (ultima_incidencia['descripcion'] == incidencia['descripcion'] and
+                    if (ultima_incidencia.get('carretera') == incidencia.get('carretera') and  # Utilitzem .get() per evitar KeyError
+                            ultima_incidencia['descripcion'] == incidencia['descripcion'] and
                             ultima_incidencia['fecha'] == datetime.now().strftime('%Y-%m-%d')):
                         incidencia_notificada = True
                         break
 
-                if not incidencia_notificada:
-                    notificar_incidencia_carretera(google_chat_webhook_url, incidencia, nombre_carretera)
-                    carreteras_con_incidencias.add(nombre_carretera)
-                    ultimas_incidencias.append({
-                        'descripcion': incidencia['descripcion'],
-                        'fecha': datetime.now().strftime('%Y-%m-%d')
-                    })
 
-                registrar_incidencia_carretera(cursor, nombre_carretera, incidencia)  # Intenta registrar (puede ser duplicado)
+                if not incidencia_notificada:
+                    incidencias_nuevas.append(incidencia)
+
+            # Notifiquem totes les incidències noves de la carretera
+            for incidencia_nueva in incidencias_nuevas:
+                notificar_incidencia_carretera(google_chat_webhook_url, incidencia_nueva, nombre_carretera)
+                registrar_incidencia_carretera(cursor, nombre_carretera, incidencia_nueva)
+                carreteras_con_incidencias.add(nombre_carretera)  
+
+            
+            ultimas_incidencias.extend([
+                {'descripcion': inc['descripcion'], 'fecha': datetime.now().strftime('%Y-%m-%d')}
+                for inc in incidencias_nuevas
+            ])
 
         if carreteras_con_incidencias:
             mensaje_final = f"Resumen de incidencias en las carreteras: {', '.join(carreteras_con_incidencias)}"
