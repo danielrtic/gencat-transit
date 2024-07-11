@@ -57,6 +57,7 @@ rss_urls = {
 
  
 # Conexión a MySQL usando PyMySQL (GLOBAL)
+
 cnx = None
 
 proxys_cache = {}
@@ -99,7 +100,7 @@ def usar_proxy_aleatorio(url_carretera):
 
     try:
         response = requests.get(url_carretera, proxies=proxies, timeout=10)
-        response.raise_for_status()
+        response.raise_for_status()  # Lanzar una excepción si hay un error HTTP
         return response
     except requests.exceptions.RequestException as e:
         print(f"Error al usar el proxy: {e}")
@@ -112,12 +113,15 @@ def obtener_incidencias_carretera(url_carretera):
         response = usar_proxy_aleatorio(url_carretera)
     else:
         response = requests.get(url_carretera, timeout=10)
-        response.raise_for_status()
+        response.raise_for_status()  # Lanzar una excepción si hay un error HTTP
 
     if response is None:
+        print(f"Error al obtener la respuesta de {url_carretera}")  # DEBUG: Imprimir error si la respuesta es None
         return []
 
     feed = feedparser.parse(response.content)
+
+    print(f"Obtenidas {len(feed.entries)} entradas del feed de {url_carretera}")  # DEBUG: Imprimir número de entradas
 
     incidencias = []
     for entry in feed.entries:
@@ -138,7 +142,7 @@ def obtener_incidencias_carretera(url_carretera):
             'direccion': direccion,
             'km': km,
             'causa': causa,
-            'descripcion': tipo_incidencia,  # Usamos 'descripcion' aquí
+            'descripcion': tipo_incidencia,  
             'fecha_hora': fecha_hora
         })
 
@@ -152,7 +156,7 @@ def registrar_incidencia_carretera(cursor, nombre_carretera, incidencia):
     # Verificar si la incidencia ya existe en el mismo día
     cursor.execute(
         "SELECT * FROM incidencias_carretera WHERE carretera = %s AND descripcion = %s AND fecha = %s",
-        (incidencia['carretera'], incidencia['descripcion'], fecha)  # Usamos 'descripcion' aquí
+        (incidencia['carretera'], incidencia['descripcion'], fecha)
     )
     if not cursor.fetchone():
         try:
@@ -169,7 +173,7 @@ def registrar_incidencia_carretera(cursor, nombre_carretera, incidencia):
 
 def cargar_ultimas_incidencias_carretera(cursor):
     try:
-        cursor.execute("SELECT descripcion, fecha FROM incidencias_carretera ORDER BY fecha DESC, hora DESC")  # Usamos 'descripcion' aquí
+        cursor.execute("SELECT descripcion, fecha FROM incidencias_carretera ORDER BY fecha DESC, hora DESC")
         return [{'descripcion': row[0], 'fecha': row[1].strftime('%Y-%m-%d')} for row in cursor.fetchall()]
     except pymysql.Error as e:
         print(f"Error al cargar últimas incidencias desde MySQL: {e}")
@@ -190,10 +194,12 @@ def main():
         cursor = cnx.cursor()
 
         ultimas_incidencias = cargar_ultimas_incidencias_carretera(cursor)
-        carreteras_con_incidencias = set()  # Para almacenar las carreteras con nuevas incidencias
+        print(f"Cargadas {len(ultimas_incidencias)} últimas incidencias desde la base de datos")  # DEBUG
 
         for nombre_carretera, url_carretera in rss_urls.items():
             incidencias = obtener_incidencias_carretera(url_carretera)
+            print(f"Encontradas {len(incidencias)} incidencias en {nombre_carretera}")  # DEBUG
+
             for incidencia in incidencias:
                 incidencia_notificada = False
                 for ultima_incidencia in ultimas_incidencias:
@@ -203,15 +209,15 @@ def main():
                         break
 
                 if not incidencia_notificada:
-                    carreteras_con_incidencias.add(nombre_carretera)  # Marcar la carretera con nueva incidencia
-                    ultimas_incidencias.append({  # Actualizar la lista de últimas incidencias
+                    ultimas_incidencias.append({
                         'descripcion': incidencia['descripcion'],
                         'fecha': datetime.now().strftime('%Y-%m-%d')
                     })
+                    print(f"Registrando nueva incidencia en {nombre_carretera}: {incidencia['descripcion']}")  # DEBUG
+                else:
+                    print(f"Incidencia ya registrada: {incidencia['descripcion']}")  # DEBUG
 
                 registrar_incidencia_carretera(cursor, nombre_carretera, incidencia)
-
-        # Opcional: Aquí podrías agregar código para generar un informe o realizar alguna acción con las carreteras que tuvieron nuevas incidencias
 
     except pymysql.MySQLError as e:  # Capturar errores específicos de MySQL
         if e.args[0] == 2003:
@@ -224,3 +230,6 @@ def main():
         if cnx:  # Verificar si la conexión se estableció antes de cerrarla
             cursor.close()
             cnx.close()
+
+if __name__ == "__main__":
+    main()
