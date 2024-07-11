@@ -155,7 +155,7 @@ def registrar_incidencia_carretera(cursor, nombre_carretera, incidencia):
 
     # Verificar si la incidencia ya existe en el mismo día
     cursor.execute(
-        "SELECT * FROM incidencias_carretera WHERE carretera = %s AND descripcion = %s AND causa = %s AND km = %s AND dirección = %s AND fecha = %s",
+        "SELECT * FROM incidencias_carretera WHERE carretera = %s AND descripcion = %s AND causa = %s AND km = %s AND direccion = %s AND fecha = %s",
         (incidencia['carretera'], incidencia['descripcion'],incidencia['causa'],incidencia['km'],incidencia['direccion'], fecha)
     )
     if not cursor.fetchone():
