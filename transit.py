@@ -48,7 +48,7 @@ rss_urls = {
     'N-230': 'http://www.gencat.cat/transit/opendata/028_RSS.xml',
     'N-240': 'http://www.gencat.cat/transit/opendata/029_RSS.xml',
     'N-152': 'http://www.gencat.cat/transit/opendata/033_RSS.xml',
-    'N-II': 'http://www.gencat.cat/transit/opendata/014_RSS.xml',
+   # 'N-II': 'http://www.gencat.cat/transit/opendata/014_RSS.xml',
     'N-260': 'http://www.gencat.cat/transit/opendata/031_RSS.xml'
     
     
