@@ -179,13 +179,48 @@ def cargar_ultimas_incidencias_carretera(cursor):
 def main():
     global cnx  # Indicar que estamos usando la variable global cnx
     try:
-        # ... (el resto de la función main es igual)
-    except pymysql.MySQLError as e:  
-        # ... (manejo de errores de MySQL igual)
+        # Conexión a MySQL usando PyMySQL
+        cnx = pymysql.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        print("Conexión a MySQL exitosa")  # Confirmar conexión
+        cursor = cnx.cursor()
+
+        ultimas_incidencias = cargar_ultimas_incidencias_carretera(cursor)
+        carreteras_con_incidencias = set()  # Para almacenar las carreteras con nuevas incidencias
+
+        for nombre_carretera, url_carretera in rss_urls.items():
+            incidencias = obtener_incidencias_carretera(url_carretera)
+            for incidencia in incidencias:
+                incidencia_notificada = False
+                for ultima_incidencia in ultimas_incidencias:
+                    if (ultima_incidencia['descripcion'] == incidencia['descripcion'] and
+                            ultima_incidencia['fecha'] == datetime.now().strftime('%Y-%m-%d')):
+                        incidencia_notificada = True
+                        break
+
+                if not incidencia_notificada:
+                    carreteras_con_incidencias.add(nombre_carretera)  # Marcar la carretera con nueva incidencia
+                    ultimas_incidencias.append({  # Actualizar la lista de últimas incidencias
+                        'descripcion': incidencia['descripcion'],
+                        'fecha': datetime.now().strftime('%Y-%m-%d')
+                    })
+
+                registrar_incidencia_carretera(cursor, nombre_carretera, incidencia)
+
+        # Opcional: Aquí podrías agregar código para generar un informe o realizar alguna acción con las carreteras que tuvieron nuevas incidencias
+
+    except pymysql.MySQLError as e:  # Capturar errores específicos de MySQL
+        if e.args[0] == 2003:
+            print(f"Error de conexión: No se puede conectar al servidor MySQL. Verifica el host y el puerto.")
+        elif e.args[0] == 1045:
+            print(f"Error de acceso: Usuario o contraseña incorrectos.")
+        else:
+            print(f"Error general de MySQL: {e}")
     finally:
-        if cnx:  
+        if cnx:  # Verificar si la conexión se estableció antes de cerrarla
             cursor.close()
             cnx.close()
-
-if __name__ == "__main__":
-    main()
